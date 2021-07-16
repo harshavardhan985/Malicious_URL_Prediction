@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+import random
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+# Load Url Data 
+urls_data = pd.read_csv("urldata.csv")
+type(urls_data)
+urls_data
+events = urls_data[['label']].replace(' ', 'None')
+events.label.value_counts().plot(kind='bar', figsize=(10,5))
+def makeTokens(f):
+    tkns_BySlash = str(f.encode('utf-8')).split('/')    # make tokens after splitting by slash
+    total_Tokens = []
+    for i in tkns_BySlash:
+        tokens = str(i).split('-')     # make tokens after splitting by dash
+        tkns_ByDot = []
+        for j in range(0,len(tokens)):
+            temp_Tokens = str(tokens[j]).split('.')     # make tokens after splitting by dot
+            tkns_ByDot = tkns_ByDot + temp_Tokens
+        total_Tokens = total_Tokens + tokens + tkns_ByDot
+    total_Tokens = list(set(total_Tokens))    #remove redundant tokens
+    if 'com' in total_Tokens:
+        total_Tokens.remove('com')   #removing .com because it occurs a lot of times 
+    return total_Tokens
+    # Labels
+y = urls_data["label"]
+# Features
+url_list = urls_data["url"]
+# Using Custom Tokenizer
+vectorizer = CountVectorizer(tokenizer=makeTokens)
+# Store vectors into X variable as Our XFeatures
+X = vectorizer.fit_transform(url_list)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+#using logistic regression
+logit = LogisticRegression()
+logit.fit(X_train, y_train)
+print("Accuracy ",logit.score(X_test, y_test))
+import tkinter as tk
+root = tk.Tk()
+canvas1 = tk.Canvas(root,width = 800, height = 600)
+canvas1.pack()
+
+label1 = tk.Label(root, text='Phishing Website Prediction')
+label1.config(font=('helvetica', 24))
+canvas1.create_window(400, 50, window=label1)
+
+label2 = tk.Label(root, text='Paste Here:')
+label2.config(font=('helvetica', 20))
+canvas1.create_window(400, 200, window=label2)
+
+entry1 = tk.Entry(root) 
+canvas1.create_window(400, 280, window=entry1)
+
+def getSquareRoot():
+    x1 = entry1.get()
+
+    label3 = tk.Label(root, text= 'The Result For ' + x1 + ' is:',font=('helvetica', 20))
+    canvas1.create_window(400, 420, window=label3)
+    
+    res = vectorizer.transform([x1])
+    prediction = logit.predict(res)
+    
+    label4 = tk.Label(root, text= prediction,font=('helvetica', 20, 'bold'))
+    canvas1.create_window(400, 460, window=label4)
+
+button1 = tk.Button(text='Find', command=getSquareRoot, bg='brown', fg='white', font=('helvetica', 18, 'bold'))
+canvas1.create_window(400, 350, window=button1)
+
+root.mainloop()
